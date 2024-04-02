@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Měsíc</title>
+<style>
+  body {
+    margin: 0;
+    overflow: hidden;
+  }
+  canvas {
+    display: block;
+    background-color: #000;
+  }
+</style>
+</head>
+<body>
+<canvas id="canvas"></canvas>
+<script>
+  const canvas = document.getElementById('canvas');
+  const ctx = canvas.getContext('2d');
+
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  const stars = [];
+  const numStars = 100;
+
+  class Star {
+    constructor(x, y, radius, speed) {
+      this.x = x;
+      this.y = y;
+      this.radius = radius;
+      this.speed = speed;
+    }
+
+    draw() {
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+      ctx.fillStyle = 'white';
+      ctx.fill();
+    }
+
+    update() {
+      this.x -= this.speed;
+      if (this.x < -this.radius) {
+        this.x = canvas.width + this.radius;
+        this.y = Math.random() * canvas.height;
+      }
+    }
+  }
+
+  function createStars() {
+    for (let i = 0; i < numStars; i++) {
+      const x = Math.random() * canvas.width;
+      const y = Math.random() * canvas.height;
+      const radius = Math.random() * 2;
+      const speed = Math.random() * 2 + 1;
+      stars.push(new Star(x, y, radius, speed));
+    }
+  }
+
+  function animate() {
+    requestAnimationFrame(animate);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    stars.forEach(star => {
+      star.update();
+      star.draw();
+    });
+
+    drawMoon();
+  }
+
+  function drawMoon() {
+    const time = Date.now() * 0.0005;
+    const moonX = Math.cos(time) * canvas.width * 0.4 + canvas.width * 0.5;
+    const moonY = Math.sin(time) * canvas.height * 0.4 + canvas.height * 0.5;
+    
+    ctx.beginPath();
+    ctx.arc(moonX, moonY, 50, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+    ctx.fill();
+  }
+
+  createStars();
+  animate();
+</script>
