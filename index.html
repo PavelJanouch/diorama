@@ -1,89 +1,97 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Měsíc</title>
-<style>
-  body {
-    margin: 0;
-    overflow: hidden;
-  }
-  canvas {
-    display: block;
-    background-color: #000;
-  }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>3D Solar System Diorama</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+    }
+    canvas {
+      display: block;
+    }
+  </style>
 </head>
 <body>
-<canvas id="canvas"></canvas>
-<script>
-  const canvas = document.getElementById('canvas');
-  const ctx = canvas.getContext('2d');
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script>
+    // Scene setup
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 10000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
 
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
+    // Geometry setup
+    const sunGeometry = new THREE.SphereGeometry(330, 32, 32); // Slunce zvětšeno na 5x
+    const sunMaterial = new THREE.MeshStandardMaterial({ color: 0xffcc00 });
+    const sun = new THREE.Mesh(sunGeometry, sunMaterial);
+    scene.add(sun);
 
-  const stars = [];
-  const numStars = 100;
+    const planetsData = [
+      { name: "Mercury", distance: 600, radius: 44, color: 0xd3d3d3, speed: 0.003 }, // Planety zvětšeny na 2,2x
+      { name: "Venus", distance: 900, radius: 66, color: 0xffa500, speed: 0.002 },
+      { name: "Earth", distance: 1200, radius: 66, color: 0x0000ff, speed: 0.0015 },
+      { name: "Mars", distance: 1500, radius: 44, color: 0xff0000, speed: 0.001 },
+      { name: "Jupiter", distance: 2100, radius: 132, color: 0xff6347, speed: 0.0007 },
+      { name: "Saturn", distance: 2700, radius: 110, color: 0xffa07a, speed: 0.0004 },
+      { name: "Uranus", distance: 3300, radius: 88, color: 0x87ceeb, speed: 0.0003 },
+      { name: "Neptune", distance: 3900, radius: 88, color: 0x4682b4, speed: 0.0002 }
+    ];
 
-  class Star {
-    constructor(x, y, radius, speed) {
-      this.x = x;
-      this.y = y;
-      this.radius = radius;
-      this.speed = speed;
+    const planets = [];
+
+    for (const planetData of planetsData) {
+      const geometry = new THREE.SphereGeometry(planetData.radius, 32, 32);
+      const material = new THREE.MeshStandardMaterial({ color: planetData.color });
+      const planet = new THREE.Mesh(geometry, material);
+      planet.distanceFromSun = planetData.distance;
+      planet.speed = planetData.speed;
+      scene.add(planet);
+      planets.push(planet);
     }
 
-    draw() {
-      ctx.beginPath();
-      ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-      ctx.fillStyle = 'white';
-      ctx.fill();
+    // Ambient light
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+    scene.add(ambientLight);
+
+    // Directional light
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.6);
+    directionalLight.position.set(1, 1, 1).normalize();
+    scene.add(directionalLight);
+
+    // Stars (imitation of a galaxy)
+    for (let i = 0; i < 1000; i++) {
+      const starGeometry = new THREE.SphereGeometry(5, 16, 16);
+      const starMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+      const star = new THREE.Mesh(starGeometry, starMaterial);
+      star.position.set(
+        (Math.random() - 0.5) * 10000,
+        (Math.random() - 0.5) * 10000,
+        (Math.random() - 0.5) * 10000
+      );
+      scene.add(star);
     }
 
-    update() {
-      this.x -= this.speed;
-      if (this.x < -this.radius) {
-        this.x = canvas.width + this.radius;
-        this.y = Math.random() * canvas.height;
+    camera.position.z = 5000;
+
+    // Animation loop
+    function animate() {
+      requestAnimationFrame(animate);
+
+      // Orbiting planets
+      for (const planet of planets) {
+        const time = Date.now() * planet.speed;
+        planet.position.x = Math.cos(time) * planet.distanceFromSun;
+        planet.position.z = Math.sin(time) * planet.distanceFromSun;
       }
+
+      renderer.render(scene, camera);
     }
-  }
 
-  function createStars() {
-    for (let i = 0; i < numStars; i++) {
-      const x = Math.random() * canvas.width;
-      const y = Math.random() * canvas.height;
-      const radius = Math.random() * 2;
-      const speed = Math.random() * 2 + 1;
-      stars.push(new Star(x, y, radius, speed));
-    }
-  }
-
-  function animate() {
-    requestAnimationFrame(animate);
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
-    stars.forEach(star => {
-      star.update();
-      star.draw();
-    });
-
-    drawMoon();
-  }
-
-  function drawMoon() {
-    const time = Date.now() * 0.0005;
-    const moonX = Math.cos(time) * canvas.width * 0.4 + canvas.width * 0.5;
-    const moonY = Math.sin(time) * canvas.height * 0.4 + canvas.height * 0.5;
-    
-    ctx.beginPath();
-    ctx.arc(moonX, moonY, 50, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
-    ctx.fill();
-  }
-
-  createStars();
-  animate();
-</script>
+    animate();
+  </script>
+</body>
+</html>
